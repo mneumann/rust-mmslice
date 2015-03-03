@@ -1,5 +1,8 @@
-# rust-mmslice
+# rust-mmslice [![Build Status][travis-image]][travis-link]
 A Memory Mapped File Slice (read-only) for Rust.
+
+[travis-image]: https://travis-ci.org/mneumann/rust-mmslice.svg?branch=master
+[travis-link]: https://travis-ci.org/mneumann/rust-mmslice
 
 ## Example
 
