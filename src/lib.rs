@@ -1,8 +1,4 @@
-#![feature(core)]
-#![feature(os)]
-#![feature(fs)]
-#![feature(std_misc)]
-#![feature(unsafe_destructor)]
+#![feature(core, os, fs, std_misc, unsafe_destructor, io)]
 
 use std::fs::File;
 use std::os::{MemoryMap, MapOption};
@@ -11,6 +7,7 @@ use std::mem;
 use std::slice;
 use std::marker;
 use std::num::Int;
+use std::io::{Result, Error, ErrorKind};
 
 /**
  * Maps a file into memory and represents this memory
@@ -30,46 +27,38 @@ pub struct MmapSlice<T:Sized> {
     marker: marker::PhantomData<T>,
 }
 
+fn other_io_error(description: &'static str) -> Error {
+    Error::new(ErrorKind::Other, description, None)
+}
+
 impl<T:Sized> MmapSlice<T> {
     /**
      * Creates a MmapSlice. Maps `nelems` of type `T`.
      */
-    pub fn new(file: File, nelems: usize) -> Result<MmapSlice<T>, &'static str> {
+    pub fn new(file: File, nelems: usize) -> Result<MmapSlice<T>> {
         match nelems.checked_mul(mem::size_of::<T>()) {
             Some(map_len) => {
-                match file.metadata() {
-                    Ok(meta) => {
-                        if map_len as u64 > meta.len() {
-                            return Err("File too small to mmap")
-                        }
-                        let opts = [MapOption::MapReadable,
-                                    MapOption::MapFd(file.as_raw_fd())];
-                        match MemoryMap::new(map_len, &opts) {
-                            Ok(map) => {
-                                if map.len() > 0 && map.len() >= map_len {
-                                    Ok(MmapSlice {
-                                        file:   file,
-                                        mmap:   map,
-                                        nelems: nelems,
-                                        marker: marker::PhantomData
-                                    })
-                                }
-                                else {
-                                    Err("Mmaped region too small")
-                                }
-                            }
-                            Err(_) => {
-                                Err("Mmap failed")
-                            }
-                        }
-                    }
-                    Err(_) => {
-                        Err("Failed to stat file")
-                    }
+                let meta = try!(file.metadata());
+                if map_len as u64 > meta.len() {
+                    return Err(other_io_error("File too small to mmap"))
+                }
+                let opts = [MapOption::MapReadable,
+                            MapOption::MapFd(file.as_raw_fd())];
+                let map = try!(MemoryMap::new(map_len, &opts).map_err(|_| other_io_error("Mmap error")));
+                if map.len() > 0 && map.len() >= map_len {
+                    Ok(MmapSlice {
+                        file:   file,
+                        mmap:   map,
+                        nelems: nelems,
+                        marker: marker::PhantomData
+                    })
+                }
+                else {
+                    Err(other_io_error("Mmaped region too small"))
                 }
             }
             None => {
-                Err("Size overflow")
+                Err(other_io_error("Size overflow"))
             }
         }
     }
