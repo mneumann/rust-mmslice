@@ -2,6 +2,6 @@
 
 name = "mmslice"
 description = "Memory Mapped File Slice (read-only) for Rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = [ "Michael Neumann <mneumann@ntecs.de>" ]
 license = "MIT"
