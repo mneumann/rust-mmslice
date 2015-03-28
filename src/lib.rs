@@ -1,8 +1,8 @@
-#![feature(core, os, fs, std_misc, unsafe_destructor, io)]
+#![feature(core, os, unsafe_destructor, io, io_ext)]
 
 use std::fs::File;
 use std::os::{MemoryMap, MapOption};
-use std::os::unix::AsRawFd;
+use std::os::unix::io::AsRawFd;
 use std::mem;
 use std::slice;
 use std::marker;
